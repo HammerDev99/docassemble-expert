@@ -16,6 +16,29 @@ from PIL import Image
 from openai import OpenAI
 import uuid
 import streamlit.components.v1 as components
+import re
+
+# =============================================
+# ANALYTICS INJECTION
+# =============================================
+def inject_analytics():
+    """Inyecta el script de analytics en el head del documento"""
+    if hasattr(st, "secrets") and "ANALYTICS_SCRIPT" in st.secrets:
+        website_id_match = re.search(r'data-website-id="([^"]+)"', st.secrets.ANALYTICS_SCRIPT)
+        website_id = website_id_match.group(1) if website_id_match else ""
+
+        script = f"""
+        <script>
+            if (!parent.document.querySelector('script[data-website-id="{website_id}"]')) {{
+                var script = parent.document.createElement('script');
+                script.defer = true;
+                script.src = 'https://analytics.sprintjudicial.com/script.js';
+                script.setAttribute('data-website-id', '{website_id}');
+                parent.document.head.appendChild(script);
+            }}
+        </script>
+        """
+        components.html(script, height=0)
 
 # =============================================
 # APPLICATION IDENTITY DICTIONARY
@@ -192,6 +215,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed",  # Menú lateral contraído por defecto
     menu_items=APP_IDENTITY["menu_items"],
 )
+
+inject_analytics()
 
 
 # Decorador para manejo de errores con retries
