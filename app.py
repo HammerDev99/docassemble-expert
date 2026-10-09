@@ -67,13 +67,9 @@ APP_IDENTITY = {
     # Información del adaptador del fork
     "fork_developer": "Daniel Arbeláez",
     "fork_github_url": "https://github.com/HammerDev99",
-    "fork_website_url": "http://portfolio.sprintjudicial.com/",
-    "fork_blog_url": "https://blog.sprintjudicial.com/",
+    "fork_website_url": "https://portfolio.sprintjudicial.com/",
     "fork_linkedin_url": "https://www.linkedin.com/in/daniel-arbelaez-/",
-    "fork_instagram_url": "https://www.instagram.com/daniel_arbe99/",
-    "fork_twitter_url": "https://x.com/hammerdev99",
-    "fork_youtube_url": "http://youtube.com/@daainti/videos",
-    "fork_email": "arbe.94@hotmail.com",
+    "fork_email": "daniel.arbelaez.alvarez@gmail.com",
     # Descripción de la aplicación - formas corta y larga
     "short_description": "Tu asistente especializado en Docassemble para crear interviews automatizadas usando YAML.",
     "long_description": """
@@ -178,7 +174,7 @@ APP_IDENTITY = {
 
     **Adaptador del Fork:**
     {fork_developer} - Legal Tech Developer 🚀
-    [GitHub]({fork_github_url}) | [Website]({fork_website_url}) | [Blog]({fork_blog_url}) | [LinkedIn]({fork_linkedin_url}) | [Instagram]({fork_instagram_url}) | [Twitter]({fork_twitter_url}) | [YouTube]({fork_youtube_url}) | [Email](mailto:{fork_email})
+    [GitHub]({fork_github_url}) | [Portafolio]({fork_website_url}) | [LinkedIn]({fork_linkedin_url}) | [Email](mailto:{fork_email})
     """,
     # Log configuration
     "log_name": "docassemble_expert",
@@ -1951,11 +1947,7 @@ with st.sidebar:
             fork_developer=APP_IDENTITY["fork_developer"],
             fork_github_url=APP_IDENTITY["fork_github_url"],
             fork_website_url=APP_IDENTITY["fork_website_url"],
-            fork_blog_url=APP_IDENTITY["fork_blog_url"],
             fork_linkedin_url=APP_IDENTITY["fork_linkedin_url"],
-            fork_instagram_url=APP_IDENTITY["fork_instagram_url"],
-            fork_twitter_url=APP_IDENTITY["fork_twitter_url"],
-            fork_youtube_url=APP_IDENTITY["fork_youtube_url"],
             fork_email=APP_IDENTITY["fork_email"],
         ),
         unsafe_allow_html=True,

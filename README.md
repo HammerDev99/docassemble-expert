@@ -257,16 +257,20 @@ Este asistente se basa en la documentación oficial de **Docassemble**, la cual 
 
 ---
 
+## Autoría, licencia y aviso
+
+- **Autor:** Daniel Arbeláez Álvarez. Construido a partir de una plantilla de otro autor ([perfil del autor de la plantilla](https://github.com/alexanderoviedofadul)), con equipo y cuentas propias, sin encargo ni instrucción de ninguna entidad o dependencia.
+- **Inicio:** Primer commit: 24/09/2025 (hora de Colombia).
+- **Licencia:** MIT, "Copyright (c) 2025 Daniel" (ver [LICENSE](LICENSE)).
+- **Demo:** [docassemble-expert.streamlit.app](https://docassemble-expert.streamlit.app). La demo usa servicios de IA de terceros. No ingreses datos personales ni información de procesos reales.
+
+*Herramienta personal de software libre, publicada a título personal. No representa a la Rama Judicial; su uso en un despacho requiere las autorizaciones institucionales que correspondan.*
+
 ## 👤 Autor
 
-**Asistente desarrollado por solicitud específica para:**
-Automatización de procesos legales y educación en tecnologías de acceso a la justicia.
+Desarrollado por [Daniel Arbeláez](https://github.com/HammerDev99) a partir de una plantilla de otro autor ([perfil del autor de la plantilla](https://github.com/alexanderoviedofadul)).
 
-**Especialización en:**
-- YAML syntax para Docassemble
-- Legal workflow automation
-- Document assembly patterns
-- Interview logic optimization
+[GitHub](https://github.com/HammerDev99) | [Portafolio](https://portfolio.sprintjudicial.com/) | [LinkedIn](https://www.linkedin.com/in/daniel-arbelaez-/) | [Email](mailto:daniel.arbelaez.alvarez@gmail.com)
 
 ---
 
