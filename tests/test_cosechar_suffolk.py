@@ -7,6 +7,7 @@ from scripts.cosechar_suffolk import (
     classify_area,
     docx_text,
     extract_metadata,
+    dedupe_repos,
     render_catalog,
 )
 
@@ -113,3 +114,10 @@ def test_render_catalog_lists_excluded(tmp_path):
     catalog = render_catalog([summary, excluded])
     assert "## vivienda (1)" in catalog
     assert "`docassemble-Private` (v): sin licencia declarada" in catalog
+
+
+def test_dedupe_repos_keeps_first_copy():
+    first = RepoInfo(org="GBLS", name="docassemble-income", url="a")
+    copy = RepoInfo(org="p-boaz", name="docassemble-Income", url="b")
+    other = RepoInfo(org="GBLS", name="docassemble-MAEvictionDefense", url="c")
+    assert dedupe_repos([first, copy, other]) == [first, other]

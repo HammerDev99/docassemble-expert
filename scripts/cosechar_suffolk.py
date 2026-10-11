@@ -42,7 +42,31 @@ from typing import Any, Dict, Iterable, List, Optional
 
 ROOT = Path(__file__).resolve().parents[1]
 # SuffolkLITLab y sus aliados del Document Assembly Line que publican paquetes en otras cuentas.
-DEFAULT_ORGS = ["SuffolkLITLab", "mplp", "masslegalhelp", "LemmaLegalConsulting", "LSVermont"]
+DEFAULT_ORGS = [
+    "SuffolkLITLab", "mplp", "masslegalhelp", "LemmaLegalConsulting", "LSVermont",
+    "IllinoisLegalAidOnline", "A2JatAKCourts", "GBLS", "lagniappe-law-lab",
+]
+# Paquetes instalados en apps-dev.suffolklitlab.org que viven en cuentas personales. Se cosechan uno por uno
+# para no traer el resto de esas cuentas. Con copias en varias cuentas se elige la de mantenimiento más reciente.
+EXTRA_REPOS = [
+    "AmandaSauber/docassemble-AffidavitOfRentEscrow",
+    "AmandaSauber/docassemble-ApplicationForNameChange",
+    "AmandaSauber/docassemble-DemandForPaymentLetter",
+    "AmandaSauber/docassemble-LawHelpMNFramework",
+    "AmandaSauber/docassemble-lawhelpmnAvailableInterviews",
+    "AmandaSauber/docassemble-MNCourts",
+    "AmandaSauber/docassemble-RequestForRepairsLetter",
+    "AmandaSauber/docassemble-SecurityDepositDemandLetter",
+    "AmandaSauber/docassemble-StopContactToCreditors",
+    "amandaleighbrown/docassemble-ALLouisianaSC",
+    "amandaleighbrown/docassemble-LaContemptComplaint",
+    "joeytaylor23/docassemble-Namechangela",
+    "lizclag/docassemble-MassHealthFairHearingRequestForm",
+    "mbuccino/docassemble-HousingGuide",
+    "networkninja/docassemble-LegalServerLink",
+    "nonprofittechy/docassemble-ssa",
+    "VTskier/docassemble-VTFinancialDemo",
+]
 DEFAULT_CACHE_DIR = ROOT / ".cache" / "suffolk"
 DEFAULT_OUT_DIR = ROOT / "knowledge" / "suffolk"
 
@@ -160,7 +184,33 @@ def github_token() -> Optional[str]:
     return out.stdout.strip() or None
 
 
-def list_repos(orgs: Iterable[str], token: Optional[str]) -> List[RepoInfo]:
+def _repo_from_api(item: Dict[str, Any], org: str) -> RepoInfo:
+    return RepoInfo(
+        org=org,
+        name=item["name"],
+        url=item["html_url"],
+        description=item.get("description") or "",
+        license=(item.get("license") or {}).get("spdx_id") or "-",
+        archived=bool(item.get("archived")),
+        pushed_at=(item.get("pushed_at") or "")[:10],
+        default_branch=item.get("default_branch") or "main",
+        size_kb=item.get("size") or 0,
+    )
+
+
+def dedupe_repos(repos: Iterable[RepoInfo]) -> List[RepoInfo]:
+    """Un repositorio por nombre de paquete: gana el primero (orden de DEFAULT_ORGS, luego EXTRA_REPOS)."""
+    seen: Dict[str, RepoInfo] = {}
+    for repo in repos:
+        key = repo.name.lower()
+        if key in seen:
+            print(f"  duplicado omitido: {repo.org}/{repo.name} (se usa {seen[key].org}/{seen[key].name})")
+            continue
+        seen[key] = repo
+    return list(seen.values())
+
+
+def list_repos(orgs: Iterable[str], token: Optional[str], extra: Iterable[str] = ()) -> List[RepoInfo]:
     import requests  # import tardío: las funciones de extracción no lo necesitan
 
     headers = {"Accept": "application/vnd.github+json"}
@@ -178,21 +228,16 @@ def list_repos(orgs: Iterable[str], token: Optional[str]) -> List[RepoInfo]:
             for item in resp.json():
                 if not item["name"].lower().startswith("docassemble-") or item.get("fork"):
                     continue
-                repos.append(
-                    RepoInfo(
-                        org=org,
-                        name=item["name"],
-                        url=item["html_url"],
-                        description=item.get("description") or "",
-                        license=(item.get("license") or {}).get("spdx_id") or "-",
-                        archived=bool(item.get("archived")),
-                        pushed_at=(item.get("pushed_at") or "")[:10],
-                        default_branch=item.get("default_branch") or "main",
-                        size_kb=item.get("size") or 0,
-                    )
-                )
+                repos.append(_repo_from_api(item, org))
             url = resp.links.get("next", {}).get("url")
-    return repos
+    for full_name in extra:
+        resp = requests.get(f"https://api.github.com/repos/{full_name}", headers=headers, timeout=30)
+        if resp.status_code == 404:
+            print(f"  ! {full_name}: no existe o no es público", file=sys.stderr)
+            continue
+        resp.raise_for_status()
+        repos.append(_repo_from_api(resp.json(), full_name.split("/", 1)[0]))
+    return dedupe_repos(repos)
 
 
 def sync_repo(repo: RepoInfo, repos_dir: Path) -> Optional[str]:
@@ -460,6 +505,8 @@ def render_catalog(summaries: List[PackageSummary]) -> str:
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--orgs", nargs="+", default=DEFAULT_ORGS, help="Organizaciones o usuarios de GitHub")
+    parser.add_argument("--extra-repos", nargs="*", default=EXTRA_REPOS,
+                        help="Repositorios sueltos (cuenta/repo) que se suman a las organizaciones")
     parser.add_argument("--repos", nargs="+", help="Procesar solo estos repositorios (nombre exacto)")
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
@@ -479,7 +526,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         repos = [RepoInfo(**r) for r in json.loads(repos_file.read_text(encoding="utf-8"))]
     else:
         print(f"Consultando GitHub: {', '.join(args.orgs)}...")
-        repos = list_repos(args.orgs, github_token())
+        repos = list_repos(args.orgs, github_token(), args.extra_repos)
         cache_dir.mkdir(parents=True, exist_ok=True)
         repos_file.write_text(json.dumps([asdict(r) for r in repos], indent=1), encoding="utf-8")
     if args.repos:
