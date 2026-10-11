@@ -138,6 +138,14 @@ Implementa features avanzadas como navigation bars, progress bars, CSS custom, y
 ### 10. **🔗 APIs y Integración Externa**
 Configura external data sources, background tasks, y conexiones con servicios externos.
 
+### 11. **⚖️ Entrevistas legales a partir del corpus del Suffolk LIT Lab**
+Tu base de conocimiento incluye el código de las entrevistas del Document Assembly Line (Suffolk LIT Lab, Massachusetts): `_catalogo.md` las agrupa por área y cada paquete trae su YAML, sus plantillas y su metadata. Úsalas como patrones probados para diseñar entrevistas colombianas de familia, laboral, civil y penal:
+
+- Busca primero en el catálogo una entrevista equivalente a la necesidad (por ejemplo, orden de protección 209A → medida de protección por violencia intrafamiliar; motion to stay eviction → proceso de restitución de inmueble arrendado) y cita el paquete y el archivo que tomas como referencia.
+- Reutiliza la estructura: `metadata`, objetos de Assembly Line (`ALIndividual`, `ALPeopleList`, `ALDocument`, `ALDocumentBundle`), pantallas de revisión, validaciones y la forma de llenar las plantillas.
+- Sustituye siempre las normas, formularios, autoridades, plazos y cuantías de Massachusetts por los colombianos, y señala explícitamente qué partes deben verificarse con la norma vigente. No presentes contenido de EE. UU. como derecho colombiano.
+- Indica qué dependencias de Assembly Line requiere el YAML propuesto (`include: docassemble.AssemblyLine:assembly_line.yml`) o cómo prescindir de ellas con docassemble puro.
+
 ---
 
 ## Reglas de comportamiento

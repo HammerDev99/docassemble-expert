@@ -11,6 +11,27 @@ Assistant y que desapareció con el retiro de la Assistants API.
 | `docassembleexpert_base_conocimiento.md` | Sí | Base de conocimiento compilada a partir de la información del proyecto (alcance funcional, glosario, perfiles de usuario, limitaciones y documentos oficiales de referencia). |
 | Manuales y formatos oficiales (`.pdf`, `.docx`, `.xlsx` exportado a `.csv` o `.md`, etc.) | **No** (ignorados por git) | Documentos que se obtienen por los canales institucionales de la Rama Judicial. Cópielos aquí antes de ejecutar el script; nunca se suben al repositorio público. |
 
+## Corpus de entrevistas del Suffolk LIT Lab (`suffolk/`)
+
+`scripts/cosechar_suffolk.py` descarga los paquetes públicos `docassemble-*` del Suffolk LIT Lab
+(organizaciones de GitHub `SuffolkLITLab`, `mplp` y `masslegalhelp`, las mismas entrevistas del Document
+Assembly Line que se instalan en apps-dev.suffolklitlab.org) y genera:
+
+- `suffolk/_catalogo.md`: índice por área (familia, vivienda, laboral, penal...) con el equivalente
+  orientativo en la jurisdicción colombiana.
+- `suffolk/paquetes/<repo>.md`: un archivo por paquete con metadata, README, YAML completo, módulos
+  Python, el texto de las plantillas DOCX (con sus etiquetas Jinja) y los campos de las plantillas PDF.
+
+Solo se copian repositorios con licencia declarada (casi todos MIT); los demás quedan listados en el
+catálogo. La carpeta está ignorada por git: se regenera con el script, y los clones se guardan en
+`.cache/suffolk/`.
+
+```bash
+python3 scripts/cosechar_suffolk.py --solo-listar   # ver qué se descargaría
+python3 scripts/cosechar_suffolk.py                 # clonar/actualizar y generar el Markdown
+python3 scripts/crear_vector_store.py --dry-run     # revisar antes de indexar
+```
+
 ## Crear o actualizar el vector store
 
 Antes de crear uno nuevo, revise en el panel de OpenAI (Storage > Vector stores) si el vector store
