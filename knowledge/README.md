@@ -32,6 +32,13 @@ python3 scripts/cosechar_suffolk.py                 # clonar/actualizar y genera
 python3 scripts/crear_vector_store.py --vector-store-id vs_xxx --sincronizar --dry-run   # revisar antes de actualizar
 ```
 
+## Actualización desde GitHub Actions
+
+El flujo **Actualizar base de conocimiento** (`.github/workflows/actualizar-conocimiento.yml`) hace la cosecha y la
+sincronización con `--sincronizar --podar` desde la pestaña Actions > Run workflow. Requiere los secretos del
+repositorio `OPENAI_API_KEY` y `VECTOR_STORE_ID`. La opción "simular" muestra los cambios sin aplicarlos.
+`--podar` solo borra paquetes cosechados (`docassemble-*.md`) que ya no existen, y se detiene si serían más del 10 %.
+
 ## Crear o actualizar el vector store
 
 Antes de crear uno nuevo, revise en el panel de OpenAI (Storage > Vector stores) si el vector store

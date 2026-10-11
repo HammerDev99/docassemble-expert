@@ -9,6 +9,7 @@ Uso:
     python3 scripts/crear_vector_store.py                             # crea un vector store nuevo
     python3 scripts/crear_vector_store.py --vector-store-id vs_xxx    # agrega archivos a uno existente
     python3 scripts/crear_vector_store.py --vector-store-id vs_xxx --sincronizar   # sube solo lo nuevo o modificado
+    python3 scripts/crear_vector_store.py --vector-store-id vs_xxx --sincronizar --podar   # y borra paquetes que ya no existen
     python3 scripts/crear_vector_store.py --knowledge-dir otra/carpeta
 
 Requiere OPENAI_API_KEY en el entorno o en .streamlit/secrets.toml.
@@ -27,6 +28,9 @@ DEFAULT_KNOWLEDGE_DIR = ROOT / "knowledge"
 DEFAULT_NAME = "DocAssemble Expert - Base de conocimiento"
 SUPPORTED_SUFFIXES = {".pdf", ".md", ".txt", ".docx", ".pptx", ".html", ".json", ".csv"}
 EXCLUDED_NAMES = {"README.md"}
+# Solo los archivos que genera scripts/cosechar_suffolk.py se pueden podar; los manuales subidos a mano nunca.
+PRUNABLE_PATTERN = re.compile(r"^docassemble-.+\.md$")
+MAX_PRUNE_RATIO = 0.10
 
 
 def read_api_key() -> str | None:
@@ -69,6 +73,13 @@ def plan_sync(local: list[Path], remote: dict[str, tuple[str, int]]) -> tuple[li
     return to_upload, to_replace, unchanged
 
 
+def plan_prune(local: list[Path], remote: dict[str, tuple[str, int]]) -> list[tuple[str, str]]:
+    """Archivos del corpus cosechado que siguen en el vector store pero ya no existen localmente: (nombre, file_id)."""
+    local_names = {path.name for path in local}
+    return sorted((name, file_id) for name, (file_id, _) in remote.items()
+                  if PRUNABLE_PATTERN.match(name) and name not in local_names)
+
+
 def remote_files(client, vector_store_id: str) -> dict[str, tuple[str, int]]:
     """Archivos del vector store por nombre, con su id y tamaño."""
     in_store = {f.id for f in client.vector_stores.files.list(vector_store_id=vector_store_id, limit=100)}
@@ -87,6 +98,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true", help="Solo listar los archivos, sin llamar a OpenAI")
     parser.add_argument("--sincronizar", action="store_true",
                         help="Con --vector-store-id: subir solo archivos nuevos o modificados y reemplazar los modificados")
+    parser.add_argument("--podar", action="store_true",
+                        help="Con --sincronizar: borrar del vector store los paquetes cosechados que ya no existen localmente")
+    parser.add_argument("--forzar-poda", action="store_true",
+                        help=f"Permitir podar más del {int(MAX_PRUNE_RATIO * 100)} %% del corpus en una sola ejecución")
     args = parser.parse_args(argv)
 
     knowledge_dir: Path = args.knowledge_dir
@@ -125,14 +140,24 @@ def main(argv: list[str] | None = None) -> int:
         vector_store = client.vector_stores.retrieve(args.vector_store_id)
         print(f"\nUsando vector store existente: {vector_store.id} ({vector_store.name})")
         if args.sincronizar:
-            files, to_replace, unchanged = plan_sync(files, remote_files(client, vector_store.id))
-            print(f"Sin cambios: {unchanged}. Nuevos: {len(files) - len(to_replace)}. Modificados: {len(to_replace)}.")
+            remote = remote_files(client, vector_store.id)
+            to_prune = plan_prune(files, remote) if args.podar else []
+            corpus_size = sum(1 for name in remote if PRUNABLE_PATTERN.match(name)) or 1
+            if len(to_prune) / corpus_size > MAX_PRUNE_RATIO and not args.forzar_poda:
+                print(f"Se podarían {len(to_prune)} de {corpus_size} paquetes; parece una cosecha incompleta. "
+                      "Revise la cosecha o use --forzar-poda.", file=sys.stderr)
+                return 3
+            for name, _ in to_prune:
+                print(f"  podar: {name}")
+            files, to_replace, unchanged = plan_sync(files, remote)
+            print(f"Sin cambios: {unchanged}. Nuevos: {len(files) - len(to_replace)}. Modificados: {len(to_replace)}. "
+                  f"A podar: {len(to_prune)}.")
             for path in files:
                 print(f"  - {path.relative_to(ROOT) if ROOT in path.parents else path}")
             if args.dry_run:
                 print("\n--dry-run: no se modificó el vector store.")
                 return 0
-            for file_id in to_replace:
+            for file_id in to_replace + [file_id for _, file_id in to_prune]:
                 client.vector_stores.files.delete(file_id=file_id, vector_store_id=vector_store.id)
                 client.files.delete(file_id)
             if not files:

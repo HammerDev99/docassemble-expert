@@ -1,0 +1,70 @@
+# Cosecha las entrevistas del Suffolk LIT Lab y sus aliados y sincroniza el vector store de OpenAI.
+# Se ejecuta a mano desde la pestaña Actions ("Run workflow").
+#
+# Secretos del repositorio (Settings > Secrets and variables > Actions):
+#   OPENAI_API_KEY   clave de la API de OpenAI
+#   VECTOR_STORE_ID  vs_... del vector store que usa la app
+# GitHub los oculta en los registros y no los entrega a pull requests de forks.
+
+name: Actualizar base de conocimiento
+
+on:
+  workflow_dispatch:
+    inputs:
+      simular:
+        description: "Solo mostrar qué cambiaría, sin tocar el vector store"
+        type: boolean
+        default: false
+      forzar_poda:
+        description: "Permitir borrar más del 10 % de los paquetes (solo si la cosecha es correcta)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vector-store
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install "openai>=3.0.0,<4.0.0" "PyYAML>=6.0" "PyPDF2>=3.0.0" "requests>=2.28.0"
+
+      - name: Restaurar clones de la cosecha anterior
+        uses: actions/cache@v4
+        with:
+          path: .cache/suffolk/repos
+          key: suffolk-repos-${{ github.run_id }}
+          restore-keys: suffolk-repos-
+
+      - name: Cosechar paquetes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/cosechar_suffolk.py
+
+      - name: Sincronizar vector store
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VECTOR_STORE_ID: ${{ secrets.VECTOR_STORE_ID }}
+          SIMULAR: ${{ inputs.simular }}
+          FORZAR_PODA: ${{ inputs.forzar_poda }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ] || [ -z "$VECTOR_STORE_ID" ]; then
+            echo "::error::Faltan los secretos OPENAI_API_KEY o VECTOR_STORE_ID."
+            exit 1
+          fi
+          args=(--vector-store-id "$VECTOR_STORE_ID" --sincronizar --podar)
+          [ "$SIMULAR" = "true" ] && args+=(--dry-run)
+          [ "$FORZAR_PODA" = "true" ] && args+=(--forzar-poda)
+          python scripts/crear_vector_store.py "${args[@]}" | grep -v "^  - knowledge/suffolk/paquetes/"
