@@ -7,6 +7,7 @@
 # Secretos del repositorio (Settings > Secrets and variables > Actions):
 #   OPENAI_API_KEY   clave de la API de OpenAI
 #   VECTOR_STORE_ID  vs_... del vector store que usa la app
+#   CORPUS_DEPLOY_KEY  llave de despliegue con escritura sobre HammerDev99/docassemble-corpus (respaldo privado)
 # GitHub los oculta en los registros y no los entrega a pull requests de forks.
 
 name: Actualizar base de conocimiento
@@ -77,3 +78,33 @@ jobs:
           [ "$PODAR" = "true" ] && args+=(--podar)
           [ "$FORZAR_PODA" = "true" ] && args+=(--forzar-poda)
           python scripts/crear_vector_store.py "${args[@]}" | grep -v "^  - knowledge/suffolk/paquetes/"
+
+      - name: Respaldar corpus en docassemble-corpus
+        if: ${{ !inputs.simular }}
+        env:
+          CORPUS_DEPLOY_KEY: ${{ secrets.CORPUS_DEPLOY_KEY }}
+          CORPUS_REPO: HammerDev99/docassemble-corpus
+        run: |
+          if [ -z "$CORPUS_DEPLOY_KEY" ]; then
+            echo "::warning::Falta el secreto CORPUS_DEPLOY_KEY; se omite el respaldo."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$CORPUS_DEPLOY_KEY" > ~/.ssh/corpus_key
+          chmod 600 ~/.ssh/corpus_key
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/corpus_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git clone -q --depth 1 "git@github.com:${CORPUS_REPO}.git" respaldo
+          # Se copia sin borrar: los paquetes cuyo repositorio de origen desapareció se conservan.
+          mkdir -p respaldo/paquetes
+          cp knowledge/suffolk/paquetes/*.md respaldo/paquetes/
+          cp knowledge/suffolk/_catalogo.md .cache/suffolk/catalogo.json respaldo/
+          cd respaldo
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Respaldo sin cambios."
+            exit 0
+          fi
+          git diff --cached --stat | tail -1
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "respaldo: corpus $(date -u +%F) (ejecución ${GITHUB_RUN_ID})"
+          git push -q origin HEAD:main

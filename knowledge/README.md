@@ -41,6 +41,11 @@ Por defecto no poda: si un repositorio de origen desaparece, su paquete se conse
 "podar" (`--podar`) solo borra paquetes cosechados (`docassemble-*.md`) que ya no se encuentran, y se detiene si
 serían más del 10 %.
 
+Cada ejecución real (sin "simular") copia además el corpus generado al repositorio privado
+`HammerDev99/docassemble-corpus` (secreto `CORPUS_DEPLOY_KEY`, llave de despliegue con escritura solo sobre ese
+repositorio). La copia nunca borra paquetes: si un repositorio de origen desaparece, su versión se conserva allí y
+puede restaurarse copiándola a `knowledge/suffolk/paquetes/` y sincronizando.
+
 ## Crear o actualizar el vector store
 
 Antes de crear uno nuevo, revise en el panel de OpenAI (Storage > Vector stores) si el vector store
