@@ -6,8 +6,7 @@ __pycache__/
 # C extensions
 *.so
 
-.streamlit/
-
+.streamlit/secrets.toml
 # Distribution / packaging
 .Python
 build/
@@ -208,3 +207,11 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 ANALYTICS_QUICK_GUIDE.md
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Base de conocimiento: los documentos oficiales no se distribuyen en el repositorio
+knowledge/*
+!knowledge/README.md
+!knowledge/docassembleexpert_base_conocimiento.md
