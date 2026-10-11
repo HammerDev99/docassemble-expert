@@ -1,6 +1,9 @@
 # Cosecha las entrevistas del Suffolk LIT Lab y sus aliados y sincroniza el vector store de OpenAI.
 # Se ejecuta a mano desde la pestaña Actions ("Run workflow").
 #
+# Por defecto NO poda: si un repositorio de origen se borra, se vuelve privado o cambia de licencia, su paquete se
+# conserva en el vector store tal como estaba. La poda solo ocurre si se marca la casilla "podar".
+#
 # Secretos del repositorio (Settings > Secrets and variables > Actions):
 #   OPENAI_API_KEY   clave de la API de OpenAI
 #   VECTOR_STORE_ID  vs_... del vector store que usa la app
@@ -15,8 +18,12 @@ on:
         description: "Solo mostrar qué cambiaría, sin tocar el vector store"
         type: boolean
         default: false
+      podar:
+        description: "Borrar del vector store los paquetes cuyo repositorio ya no se encuentra"
+        type: boolean
+        default: false
       forzar_poda:
-        description: "Permitir borrar más del 10 % de los paquetes (solo si la cosecha es correcta)"
+        description: "Con podar: permitir borrar más del 10 % de los paquetes"
         type: boolean
         default: false
 
@@ -58,13 +65,15 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VECTOR_STORE_ID: ${{ secrets.VECTOR_STORE_ID }}
           SIMULAR: ${{ inputs.simular }}
+          PODAR: ${{ inputs.podar }}
           FORZAR_PODA: ${{ inputs.forzar_poda }}
         run: |
           if [ -z "$OPENAI_API_KEY" ] || [ -z "$VECTOR_STORE_ID" ]; then
             echo "::error::Faltan los secretos OPENAI_API_KEY o VECTOR_STORE_ID."
             exit 1
           fi
-          args=(--vector-store-id "$VECTOR_STORE_ID" --sincronizar --podar)
+          args=(--vector-store-id "$VECTOR_STORE_ID" --sincronizar)
           [ "$SIMULAR" = "true" ] && args+=(--dry-run)
+          [ "$PODAR" = "true" ] && args+=(--podar)
           [ "$FORZAR_PODA" = "true" ] && args+=(--forzar-poda)
           python scripts/crear_vector_store.py "${args[@]}" | grep -v "^  - knowledge/suffolk/paquetes/"
