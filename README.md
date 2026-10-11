@@ -141,6 +141,77 @@ Implementa features avanzadas como navigation bars, progress bars, CSS custom, y
 ### 10. **🔗 APIs y Integración Externa**
 Configura external data sources, background tasks, y conexiones con servicios externos.
 
+### 11. **⚖️ Entrevistas legales basadas en el Document Assembly Line**
+La base de conocimiento incluye el código de 412 paquetes `docassemble-*` de código abierto del Suffolk LIT Lab
+(Boston) y de organizaciones aliadas (Illinois Legal Aid Online, tribunales de Alaska, Greater Boston Legal Services,
+Michigan Legal Help, Legal Services Vermont, entre otras): metadata, YAML, módulos Python, texto de plantillas DOCX
+y campos de PDF. El asistente los usa como patrones probados para diseñar entrevistas colombianas de familia,
+laboral, civil y penal, cita el paquete de referencia y sustituye normas, autoridades y formularios de EE. UU. por
+los colombianos.
+
+**Ejemplo de uso:**
+> "Quiero una entrevista para solicitar una medida de protección por violencia intrafamiliar."
+>
+> El asistente toma como referencia `docassemble.MA209AProtectiveOrder`, explica su flujo y propone el YAML
+> adaptado a la comisaría de familia (Ley 294 de 1996), con la lista de puntos que un abogado debe verificar.
+
+---
+
+## 🏗️ Arquitectura del proyecto
+
+| Pieza | Archivo o servicio | Función |
+|---|---|---|
+| Interfaz | `app.py` (Streamlit) | Chat, carga de documentos con OCR (Mistral) y exportación |
+| Motor del asistente | `docassembleexpert_openai.py` | Responses API de OpenAI con la herramienta `file_search` |
+| Instrucciones | `prompts/docassembleexpert_instrucciones.md` | Comportamiento y reglas del asistente |
+| Base de conocimiento | Vector store de OpenAI, alimentado desde `knowledge/` | Documentación del proyecto y corpus del Document Assembly Line |
+| Cosecha del corpus | `scripts/cosechar_suffolk.py` | Descarga los paquetes públicos y los convierte en Markdown |
+| Indexación | `scripts/crear_vector_store.py` | Crea el vector store o lo sincroniza (solo lo nuevo o modificado) |
+| Actualización | GitHub Action **Actualizar base de conocimiento** | Cosecha, sincroniza y respalda el corpus a demanda |
+| Respaldo | Repositorio privado del autor | Copia del corpus generado que nunca borra paquetes |
+| Despliegue | Streamlit Community Cloud | Se redespliega solo con cada push a `main` |
+
+El corpus generado no se versiona en este repositorio (`knowledge/*` y `.cache/` están en `.gitignore`): vive en el
+vector store y en el respaldo privado. Detalle completo en [knowledge/README.md](knowledge/README.md).
+
+### Ejecución local
+
+```bash
+pip install -r requirements.txt
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml   # completar OPENAI_API_KEY, MISTRAL_API_KEY y VECTOR_STORE_ID
+streamlit run app.py
+python3 -m pytest                                             # pruebas, sin red
+```
+
+`.streamlit/secrets.toml` está ignorado por git. Nunca escriba claves reales en `secrets.toml.example`, que sí se
+versiona.
+
+### Actualizar la base de conocimiento
+
+Desde GitHub: pestaña **Actions** > **Actualizar base de conocimiento** > **Run workflow**.
+
+| Opción | Efecto |
+|---|---|
+| (por defecto) | Cosecha los paquetes, sube al vector store solo lo nuevo o modificado y copia el corpus al respaldo privado |
+| simular | Muestra qué cambiaría sin tocar el vector store ni el respaldo |
+| podar | Borra del vector store los paquetes cuyo repositorio ya no existe (apagada por defecto, para conservarlos) |
+| forzar poda | Permite que la poda supere el 10 % de los paquetes |
+
+Secretos del repositorio (Settings > Secrets and variables > Actions): `OPENAI_API_KEY`, `VECTOR_STORE_ID` y
+`CORPUS_DEPLOY_KEY` (llave de despliegue con escritura solo sobre el repositorio de respaldo). GitHub los oculta en
+los registros y no los entrega a pull requests de forks. Las Actions no se ejecutan solas: se lanzan a mano.
+
+Equivalente local:
+
+```bash
+python3 scripts/cosechar_suffolk.py
+python3 scripts/crear_vector_store.py --vector-store-id vs_... --sincronizar --dry-run   # revisar
+python3 scripts/crear_vector_store.py --vector-store-id vs_... --sincronizar
+```
+
+En macOS, algunos repositorios con archivos que solo difieren en mayúsculas generan una versión distinta a la de
+GitHub Actions (Linux); por eso conviene sincronizar desde la Action.
+
 ---
 
 ## ⚠️ Limitaciones
@@ -150,6 +221,7 @@ El asistente **NO puede**:
 - **Ejecutar código YAML en tiempo real** - No tiene acceso a un servidor Docassemble para probar código
 - **Acceder a archivos del servidor** - No puede ver logs, debugging info en vivo, o archivos específicos del usuario
 - **Hacer deployment automático** - No puede instalar packages o configurar servidores
+- **Dar asesoría jurídica** - Las entrevistas adaptadas de Massachusetts deben validarse con la norma colombiana vigente y con un abogado
 - **Debugging en tiempo real** - Requiere que el usuario proporcione el código YAML y mensajes de error específicos
 - **Acceso a base de datos** - No puede consultar datos almacenados en interviews activos
 - **Testing automático** - No puede ejecutar pruebas de interviews sin acceso al Playground
@@ -173,6 +245,11 @@ El asistente **NO puede**:
 - **Legal Module:** https://docassemble.org/docs/legal.html
 - **Document Assembly:** https://docassemble.org/docs/documents.html
 - **API Documentation:** https://docassemble.org/docs/api.html
+
+### ⚖️ Document Assembly Line (Suffolk LIT Lab)
+- **Proyecto:** https://assemblyline.suffolklitlab.org/
+- **Código fuente:** https://github.com/SuffolkLITLab
+- **Formularios en producción:** https://courtformsonline.org
 
 ### 🌐 Comunidad y Soporte
 - **Slack Community:** docassemble.slack.com
@@ -244,6 +321,8 @@ Este asistente se basa en la documentación oficial de **Docassemble**, la cual 
 - Utilización libre para propósitos educativos y comerciales
 - Respeto a las licencias de dependencies y third-party libraries
 - Reconocimiento apropiado al proyecto Docassemble original
+- El corpus del Document Assembly Line no se distribuye en este repositorio; cada paquete conserva la licencia de su
+  autor (en su mayoría MIT), indicada en el archivo generado y en el catálogo
 
 ---
 
@@ -252,6 +331,7 @@ Este asistente se basa en la documentación oficial de **Docassemble**, la cual 
 **Reconocimiento Especial:**
 - **Jonathan Pyle** - Creador y maintainer principal de Docassemble
 - **Docassemble Community** - Contributors, testers, y usuarios activos
+- **Suffolk LIT Lab y el Document Assembly Line** - Y las organizaciones aliadas que publican sus entrevistas con licencia abierta
 - **Legal Technology Pioneers** - Por impulsar la democratización del acceso a la justicia
 - **Open Source Community** - Por hacer posible herramientas como esta
 
