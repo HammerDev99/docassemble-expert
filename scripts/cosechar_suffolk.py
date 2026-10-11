@@ -580,9 +580,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             total_bytes += len(markdown.encode("utf-8"))
         summaries.append(summary)
 
-    (args.out_dir / "_catalogo.md").write_text(render_catalog(summaries), encoding="utf-8")
-    (cache_dir / "catalogo.json").write_text(
-        json.dumps([asdict(s) for s in summaries], indent=1, ensure_ascii=False), encoding="utf-8")
+    if args.repos:  # una cosecha parcial no debe reemplazar el catálogo completo
+        print("Con --repos el catálogo no se regenera; ejecute la cosecha completa para actualizarlo.")
+    else:
+        (args.out_dir / "_catalogo.md").write_text(render_catalog(summaries), encoding="utf-8")
+        (cache_dir / "catalogo.json").write_text(
+            json.dumps([asdict(s) for s in summaries], indent=1, ensure_ascii=False), encoding="utf-8")
 
     included = [s for s in summaries if s.included]
     areas: Dict[str, int] = {}
