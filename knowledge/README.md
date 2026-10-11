@@ -14,7 +14,7 @@ Assistant y que desapareció con el retiro de la Assistants API.
 ## Corpus de entrevistas del Suffolk LIT Lab (`suffolk/`)
 
 `scripts/cosechar_suffolk.py` descarga los paquetes públicos `docassemble-*` del Suffolk LIT Lab
-(organizaciones de GitHub `SuffolkLITLab`, `mplp` y `masslegalhelp`, las mismas entrevistas del Document
+(cuentas de GitHub `SuffolkLITLab`, `mplp`, `masslegalhelp`, `LemmaLegalConsulting` y `LSVermont`, las mismas entrevistas del Document
 Assembly Line que se instalan en apps-dev.suffolklitlab.org) y genera:
 
 - `suffolk/_catalogo.md`: índice por área (familia, vivienda, laboral, penal...) con el equivalente
@@ -29,7 +29,7 @@ catálogo. La carpeta está ignorada por git: se regenera con el script, y los c
 ```bash
 python3 scripts/cosechar_suffolk.py --solo-listar   # ver qué se descargaría
 python3 scripts/cosechar_suffolk.py                 # clonar/actualizar y generar el Markdown
-python3 scripts/crear_vector_store.py --dry-run     # revisar antes de indexar
+python3 scripts/crear_vector_store.py --vector-store-id vs_xxx --sincronizar --dry-run   # revisar antes de actualizar
 ```
 
 ## Crear o actualizar el vector store
@@ -43,6 +43,7 @@ Assistants API y conservan los manuales ya indexados. En ese caso use `--vector-
 python3 scripts/crear_vector_store.py --dry-run     # lista los archivos que se subirían
 python3 scripts/crear_vector_store.py               # crea un vector store nuevo y sube los archivos
 python3 scripts/crear_vector_store.py --vector-store-id vs_xxx   # agrega archivos a uno existente
+python3 scripts/crear_vector_store.py --vector-store-id vs_xxx --sincronizar   # solo lo nuevo o modificado
 ```
 
 El script imprime el identificador `vs_...`. Cópielo en `.streamlit/secrets.toml` (o en los

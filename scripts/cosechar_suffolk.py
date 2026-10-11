@@ -3,7 +3,8 @@
 Cosecha las entrevistas de código abierto del Suffolk LIT Lab (Assembly Line) y las convierte en
 Markdown para la base de conocimiento de DocAssemble Expert.
 
-Fuente: los repositorios públicos ``docassemble-*`` de GitHub (SuffolkLITLab, mplp, masslegalhelp).
+Fuente: los repositorios públicos ``docassemble-*`` de GitHub (SuffolkLITLab, mplp, masslegalhelp y los aliados
+LemmaLegalConsulting y LSVermont).
 Son los mismos paquetes que se instalan en apps-dev.suffolklitlab.org, pero completos: YAML de las
 entrevistas, módulos Python, plantillas DOCX/PDF y README. No se raspa el servidor.
 
@@ -40,7 +41,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ORGS = ["SuffolkLITLab", "mplp", "masslegalhelp"]
+# SuffolkLITLab y sus aliados del Document Assembly Line que publican paquetes en otras cuentas.
+DEFAULT_ORGS = ["SuffolkLITLab", "mplp", "masslegalhelp", "LemmaLegalConsulting", "LSVermont"]
 DEFAULT_CACHE_DIR = ROOT / ".cache" / "suffolk"
 DEFAULT_OUT_DIR = ROOT / "knowledge" / "suffolk"
 
@@ -57,7 +59,8 @@ FRAMEWORK_PATTERN = re.compile(
 # Utilidades sin contenido jurídico (temas, pruebas, linters, índices, apps internas de clínicas).
 TOOLING_NAME_PATTERN = re.compile(
     r"theme|(?<!con)test|^ALLinter|branding|index|select|validation|hello|training|timeline|icebreaker|lablibs|reflection"
-    r"|signup|reviewscreen|framework|clinicintake|caseopening|povertyscale|anystate",
+    r"|signup|reviewscreen|framework|clinicintake|caseopening|povertyscale|anystate"
+    r"|feedback|maintenance|interviewmanager|docsmerger|termsandconditions",
     re.I,
 )
 
@@ -86,11 +89,11 @@ KEYWORD_AREAS = [
                  r"|tenancy|grievance"),
     ("laboral", r"wage|employ|unemploy|worker|job|work.?authori"),
     ("penal", r"criminal|seal|cori|expunge|bail|traffic|probation|record|juvenile|case.?integrity"),
-    ("civil-deudas-consumidor", r"debt|small.?claim|consumer|collection|credit|garnish|judgment|financial"),
+    ("civil-deudas-consumidor", r"debt|small.?claim|consumer|collection|credit|garnish|judgment|financial|bankrupt"),
     ("sucesiones", r"\bwill\b|estate|power.?s?.?of.?attorney|healthcare.?proxy"),
     ("beneficios-sociales", r"snap|food|\bdta\b|benefit|poverty"),
     ("migratorio", r"immigra"),
-    ("procesal-general", r"indigen|fee.?waiver|motion|appeal|court|continu|default|filing"),
+    ("procesal-general", r"indigen|fee.?waiver|motion|appeal|court|continu|default|filing|certificate.?of.?service"),
 ]
 
 # Equivalencia orientativa con la jurisdicción colombiana (para el catálogo, no es asesoría jurídica).

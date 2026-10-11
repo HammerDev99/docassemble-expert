@@ -82,6 +82,8 @@ def test_classify_area():
     assert classify_area("docassemble-LITLabTheme", "", []) == "framework"
     assert classify_area("docassemble-MATC1AUncontestedDivorce", "", []) == "familia"
     assert classify_area("docassemble-NoticeOfAppealInternalForm", "", []) == "procesal-general"
+    assert classify_area("docassemble-VTCertificateOfService", "", []) == "procesal-general"
+    assert classify_area("docassemble-VTFeedback", "", []) == "framework"
 
 
 def test_build_package_renders_markdown(tmp_path):
